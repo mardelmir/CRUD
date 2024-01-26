@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 
+// Necesarias siempre que se haga PUT y POST
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -15,7 +16,6 @@ let usuarios = [
 
 // Read
 app.get('/', (req, res) => { res.redirect('/usuarios') })
-
 app.get('/usuarios', (req, res) => { res.json(usuarios) })
 
 app.get('/usuarios/:nombre', (req, res) => {
@@ -23,15 +23,21 @@ app.get('/usuarios/:nombre', (req, res) => {
 
     usuarioEncontrado
         ? res.json(usuarioEncontrado)
-        : res.status(404).send('Usuario no encontrado')
+        : res.status(404).json({ mensaje: "Usuario no encontrado" })
 })
 
 
 // Create
 app.post('/usuarios', (req, res) => {
-    const nuevoUsuario = { id: usuarios.length + 1, ...req.body }
+    const nuevoUsuario = {
+        id: usuarios.length + 1,
+        nombre: req.body.nombre,
+        edad: req.body.edad,
+        lugarProcedencia: req.body.lugarProcedencia
+    }
     usuarios.push(nuevoUsuario)
-    res.json(usuarios)
+    //res.json(usuarios)
+    res.redirect('/usuarios')
 })
 
 
@@ -40,16 +46,15 @@ app.put('/usuarios/:nombre', (req, res) => {
     const indexUsuario = usuarios.findIndex(usuario => usuario.nombre === req.params.nombre)
 
     if (indexUsuario !== -1) {
-        usuarios[indexUsuario] = {
-            id: usuarios[indexUsuario].id,
-            nombre: req.body.nombre || usuarios[indexUsuario].nombre,
-            edad: req.body.edad || usuarios[indexUsuario].edad,
-            lugarProcedencia: req.body.lugarProcedencia || usuarios[indexUsuario].lugarProcedencia
-        };
+        usuarios[indexUsuario] = { id: usuarios[indexUsuario].id, ...req.body }
+        //     nombre: req.body.nombre || usuarios[indexUsuario].nombre,
+        //     edad: req.body.edad || usuarios[indexUsuario].edad,
+        //     lugarProcedencia: req.body.lugarProcedencia || usuarios[indexUsuario].lugarProcedencia
+        // };
 
         res.json(usuarios);
     } else {
-        res.status(404).send('Usuario no encontrado')
+        res.status(404).json({ mensaje: "Usuario no encontrado" })
     }
 })
 
@@ -65,7 +70,7 @@ app.delete('/usuarios/:nombre', (req, res) => {
         for (const usuario of usuarios) { usuario.id = nuevaId++ }
 
         res.json(usuarios);
-    } else { res.status(404).send('usuario no encontrado') }
+    } else { res.status(404).json({ mensaje: "Usuario no encontrado" }) }
 })
 
 
