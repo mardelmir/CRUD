@@ -14,81 +14,61 @@ let usuarios = [
 
 
 // Read
-app.get('/', (req, res) => {
-    res.redirect('/usuarios')
-})
+app.get('/', (req, res) => { res.redirect('/usuarios') })
 
-app.get('/usuarios/json', (req, res) => {
-    res.json(usuarios)
-})
-
-app.get('/usuarios', (req, res) => {
-    res.send(`
-    <h1>Lista de usuarios</h1>
-        <ul>
-        ${usuarios.map(usuario => `<li> ID: ${usuario.id} | <b>Nombre:</b> ${usuario.nombre} | <b>Edad:</b> ${usuario.edad} | <b>Procedencia:</b> ${usuario.lugarProcedencia}</li>`)
-            .join('')}
-        </ul>
-        </br>
-        <form action="/usuarios" method="post">
-            <h3>Añadir nuevo usuario</h3>
-            <label for="nombre">Nombre: </label>
-            <input type="text" id="nombre" name="nombre" required>
-            </br>
-            <label for="edad">Edad: </label>
-            <input type="number" id="edad" name="edad" required>
-            </br>
-            <label for="procedencia">Lugar de procedencia: </label>
-            <input type="text" id="procedencia" name="procedencia" required>
-            </br></br>
-            <button type="submit">Agregar usuario</button>
-        </form>
-        <a href="/usuarios/json">json</a>`)
-})
+app.get('/usuarios', (req, res) => { res.json(usuarios) })
 
 app.get('/usuarios/:nombre', (req, res) => {
     const usuarioEncontrado = usuarios.find(usuario => usuario.nombre === req.params.nombre)
 
     usuarioEncontrado
-        ? res.send(`
-        <h1>Información del usuario</h1>
-            <ul>
-                <li>ID: ${usuarioEncontrado.id}</li>
-                <li>Nombre: ${usuarioEncontrado.nombre}</li>
-                <li>Edad: ${usuarioEncontrado.edad}</li>
-                <li>Lugar de procedencia: ${usuarioEncontrado.lugarProcedencia}</li>
-            </ul>
-            <a href="/usuarios"><button>Volver</button></a>`)
-        : res.status(404).send('<p>Usuario no encontrado</p><a href="/usuarios">Volver a la lista de usuarios</a>')
+        ? res.json(usuarioEncontrado)
+        : res.status(404).send('Usuario no encontrado')
 })
 
 
 // Create
 app.post('/usuarios', (req, res) => {
-    const nuevoUsuario = { id: usuarios.length + 1, nombre: req.body.nombre, edad: req.body.edad, lugarProcedencia: req.body.procedencia }
-
+    const nuevoUsuario = { id: usuarios.length + 1, ...req.body }
     usuarios.push(nuevoUsuario)
-    res.redirect('/usuarios')
+    res.json(usuarios)
 })
+
 
 //Update
 app.put('/usuarios/:nombre', (req, res) => {
-    const index = usuarios.findIndex(usuario => usuario.nombre === req.params.nombre)
+    const indexUsuario = usuarios.findIndex(usuario => usuario.nombre === req.params.nombre)
+
+    if (indexUsuario !== -1) {
+        usuarios[indexUsuario] = {
+            id: usuarios[indexUsuario].id,
+            nombre: req.body.nombre || usuarios[indexUsuario].nombre,
+            edad: req.body.edad || usuarios[indexUsuario].edad,
+            lugarProcedencia: req.body.lugarProcedencia || usuarios[indexUsuario].lugarProcedencia
+        };
+
+        res.json(usuarios);
+    } else {
+        res.status(404).send('Usuario no encontrado')
+    }
 })
 
 
 // Delete
 app.delete('/usuarios/:nombre', (req, res) => {
-    usuarios =  usuarios.filter(usuario => usuario.name !== req.params.nombre)
-    
+    const encontrarUsuario = usuarios.find(usuario => usuario.nombre == req.params.nombre)
+
+    if (encontrarUsuario) {
+        usuarios = usuarios.filter(usuario => usuario.nombre !== req.params.nombre)
+
+        let nuevaId = 1;
+        for (const usuario of usuarios) { usuario.id = nuevaId++ }
+
+        res.json(usuarios);
+    } else { res.status(404).send('usuario no encontrado') }
 })
 
 
+app.use((req, res) => { res.status(404).send('Página no encontrada') })
 
-app.use((req, res) => {
-    res.status(404).send('<h1>Página no encontrada</h1><a href="/usuarios">Volver a la lista de usuarios</a>')
-})
-
-app.listen(3000, () => {
-    console.log('App está escuchando en el puerto 3000')
-})
+app.listen(3000, () => { console.log('App está escuchando en el puerto http://localhost:3000') })
